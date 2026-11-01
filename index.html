@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TruthLens – Check before you share</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+/* Preset Themes */
+body[data-theme="cyber"] {
+  --bg-base: #030712;
+  --bg-gradient: radial-gradient(circle at 50% -20%, #0d1b2a 0%, #030712 60%, #02040a 100%);
+  --ink: #f0fdfa;
+  --mut: #94a3b8;
+  --line: rgba(56,189,248,.2);
+  --glass: rgba(15,23,42,.65);
+  --accent: #00f2fe;
+  --accent-2: #4f46e5;
+  --accent-3: #ec4899;
+  --btn-text: #030712;
+}
+
+body[data-theme="solar"] {
+  --bg-base: #0c0500;
+  --bg-gradient: radial-gradient(circle at 50% -20%, #2a0800 0%, #0c0500 65%, #050200 100%);
+  --ink: #fff7ed;
+  --mut: #fdba74;
+  --line: rgba(251,146,60,.25);
+  --glass: rgba(28,12,4,.7);
+  --accent: #f97316;
+  --accent-2: #ef4444;
+  --accent-3: #fbbf24;
+  --btn-text: #1c0a00;
+}
+
+body[data-theme="emerald"] {
+  --bg-base: #021a14;
+  --bg-gradient: radial-gradient(circle at 50% -20%, #064e3b 0%, #021a14 65%, #010d0a 100%);
+  --ink: #ecfdf5;
+  --mut: #6ee7b7;
+  --line: rgba(52,211,153,.25);
+  --glass: rgba(6,35,27,.7);
+  --accent: #10b981;
+  --accent-2: #059669;
+  --accent-3: #34d399;
+  --btn-text: #021a14;
+}
+
+body[data-theme="synthwave"] {
+  --bg-base: #10002b;
+  --bg-gradient: radial-gradient(circle at 50% -20%, #3c096c 0%, #10002b 65%, #080014 100%);
+  --ink: #fae8ff;
+  --mut: #d8b4fe;
+  --line: rgba(232,121,249,.25);
+  --glass: rgba(24,7,47,.7);
+  --accent: #f43f5e;
+  --accent-2: #8b5cf6;
+  --accent-3: #38bdf8;
+  --btn-text: #ffffff;
+}
+
+:root {
+  --ok: #10b981;
+  --bad: #f43f5e;
+  --warn: #f59e0b;
+  color-scheme: dark;
+  box-sizing: border-box;
+}
+
+*,*:before,*:after{box-sizing:inherit}
+html{scroll-padding-top:70px}html,body{margin:0}
+body{
+  font:400 16px/1.65 'Inter',system-ui,sans-serif;
+  color:var(--ink);
+  background:var(--bg-gradient) fixed;
+  overflow-x:hidden;
+  transition:background 0.5s ease, color 0.3s ease;
+}
+
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;display:block}
+.frame{position:fixed;inset:8px;border-radius:26px;border:1px solid var(--line);box-shadow:inset 0 0 50px rgba(255,255,255,.03);z-index:40;pointer-events:none}
+#prog{position:fixed;top:0;left:0;height:3px;width:0;z-index:50;background:linear-gradient(90deg,var(--accent),var(--accent-2),var(--accent-3))}
+#glow{position:fixed;width:420px;height:420px;margin:-210px 0 0 -210px;border-radius:50%;z-index:2;pointer-events:none;background:radial-gradient(closest-side,var(--accent),transparent);opacity:.2;transition:opacity .3s}
+
+#ld{position:fixed;inset:0;z-index:100;background:#030712;display:grid;place-items:center;color:var(--accent);font-family:'Space Grotesk',sans-serif;font-weight:700;letter-spacing:8px;transition:opacity .8s .4s,visibility 0s 1.2s}
+#ld.off{opacity:0;visibility:hidden}#ld span{animation:pulse 1s infinite alternate}@keyframes pulse{from{opacity:.3}to{opacity:1}}
+
+header{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:8px;right:8px;z-index:30;display:flex;align-items:center;gap:20px;padding:12px 24px;border-radius:26px 26px 0 0;background:var(--glass);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;letter-spacing:-.5px;color:var(--accent)}
+.tag{font-size:10px;line-height:1.2;color:var(--mut)}
+header nav{display:flex;gap:16px;margin-left:auto;align-items:center;font-size:13px}header a{color:var(--ink);text-decoration:none}header a:hover{color:var(--accent)}
+.cta{border:1px solid var(--accent);padding:7px 14px;font-size:12px;font-weight:600;border-radius:6px;color:var(--accent)!important;transition:all .2s}.cta:hover{background:var(--accent);color:var(--btn-text)!important;box-shadow:0 0 20px var(--accent)}
+.user-btn{background:rgba(255,255,255,.08);border:1px solid var(--line);padding:6px 14px;font-size:12px;font-weight:600;border-radius:999px;cursor:pointer;color:var(--ink);transition:all .2s}
+.user-btn:hover{background:rgba(255,255,255,.18);color:#fff}
+
+/* Live Theme Switcher Floating Tool */
+.theme-picker{position:fixed;bottom:24px;right:24px;z-index:60;display:flex;align-items:center;gap:8px;background:var(--glass);padding:8px 14px;border-radius:999px;border:1px solid var(--line);backdrop-filter:blur(14px);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.theme-picker span{font-size:11px;font-family:'Space Grotesk',sans-serif;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.theme-btn{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .2s,border-color .2s;outline:none}
+.theme-btn:hover{transform:scale(1.2)}
+.theme-btn.active{border-color:#fff;transform:scale(1.15)}
+
+.dots{position:fixed;right:22px;top:50%;transform:translateY(-50%);z-index:30;display:grid;gap:12px}
+.dots a{width:9px;height:9px;border-radius:50%;border:1px solid var(--accent);background:transparent;display:block;transition:all .3s}.dots a.on{background:linear-gradient(var(--accent),var(--accent-2));border-color:transparent;transform:scale(1.4)}
+.scroll{position:fixed;left:30px;bottom:22px;z-index:30;font-size:11px;color:var(--mut);letter-spacing:1px}
+main{position:relative;z-index:5}
+section{min-height:130vh;padding:130px 64px 90px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:88px;align-content:center;max-width:1420px;margin:0 auto;position:relative}
+.idx{position:absolute;left:64px;top:96px;font-size:11px;font-family:'Space Grotesk',sans-serif;color:var(--accent);letter-spacing:1px}
+.pn{background:var(--glass);border:1px solid var(--line);border-radius:22px;padding:36px;backdrop-filter:blur(16px);box-shadow:0 30px 70px rgba(0,0,0,.6);transition:transform .2s,box-shadow .2s}
+.tilt:hover{box-shadow:0 30px 80px rgba(0,0,0,.8)}
+.stack{display:grid;gap:40px;align-content:center}
+h1,h2{font-family:'Space Grotesk',sans-serif;margin:0 0 12px;letter-spacing:-1.5px;line-height:1.05;font-weight:700;text-transform:uppercase}
+h1{font-size:clamp(32px,4.6vw,60px);margin-bottom:20px}h2{font-size:clamp(26px,3.6vw,48px)}h3{margin:0 0 4px;font-size:16px;font-weight:600}
+h1 em,h2 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--accent-2),var(--accent-3));-webkit-background-clip:text;background-clip:text;color:transparent}
+p{margin:0 0 20px;line-height:1.7;color:var(--mut);max-width:56ch;font-size:17px}.note{font-size:12px;color:var(--mut)}
+textarea, input[type="text"], input[type="email"], input[type="password"]{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;background:rgba(0,0,0,.45);color:var(--ink)}
+textarea{min-height:92px;resize:vertical}
+textarea:focus, input:focus{outline:2px solid var(--accent);outline-offset:1px}
+
+/* File Upload & Preview */
+.file-drop{margin-top:10px;border:1px dashed var(--line);border-radius:12px;padding:14px;text-align:center;background:rgba(0,0,0,.3);cursor:pointer;display:block;transition:all .2s}
+.file-drop:hover{border-color:var(--accent);background:rgba(255,255,255,.05)}
+.file-drop input[type="file"]{display:none}
+.file-drop span{font-size:13px;color:var(--mut)}
+.img-preview-box{margin-top:10px;display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.5);border:1px solid var(--line);padding:8px 12px;border-radius:10px}
+.img-preview-box img{width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.img-preview-box .name{font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.img-preview-box button{padding:5px 12px;font-size:11px;border-radius:6px;background:rgba(244,63,94,.2);color:var(--bad);border:1px solid rgba(244,63,94,.3);box-shadow:none}
+
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+button{font:600 13px 'Inter',sans-serif;border:0;border-radius:999px;padding:11px 22px;cursor:pointer;color:var(--btn-text);background:linear-gradient(90deg,var(--accent),var(--accent-2));box-shadow:0 8px 24px rgba(0,0,0,.35);transition:transform .15s,box-shadow .2s}
+button:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.5)}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+button.ghost:hover{border-color:var(--accent);background:rgba(255,255,255,.08)}
+.badge{display:inline-block;font-weight:700;border-radius:999px;padding:3px 12px;font-size:13px;margin-bottom:6px}
+.TRUE{background:rgba(16,185,129,.15);color:var(--ok)}.FALSE{background:rgba(244,63,94,.15);color:var(--bad)}.MIXED{background:rgba(245,158,11,.15);color:var(--warn)}.UNVERIFIED{background:rgba(148,163,184,.15);color:var(--mut)}
+.res{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:12px;background:rgba(0,0,0,.5);animation:in .35s}
+@keyframes in{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+.res a{color:var(--accent)}.meter{height:6px;border-radius:9px;background:rgba(255,255,255,.1);margin-top:8px;overflow:hidden}.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-3));transition:width .8s}
+.steps{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--mut)}.steps b{color:var(--ok)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mini{border:1px solid var(--line);border-radius:14px;padding:16px;background:rgba(255,255,255,.03)}.mini span{font-size:12px;color:var(--mut)}
+.num{font-family:'Space Grotesk',sans-serif;font-size:38px;font-weight:700;letter-spacing:-1px;background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.flag{display:flex;gap:10px;align-items:flex-start}.flag i{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--btn-text);font-style:normal;font-weight:700;font-size:13px}
+.lay{display:grid;gap:18px;margin-top:20px}.lay .mini{display:flex;gap:12px;align-items:center}.lay i{flex:none;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--btn-text);font-style:normal;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+
+/* History Log List */
+.hist{display:grid;gap:8px;margin-top:10px;max-height:360px;overflow-y:auto;padding-right:4px}
+.hist-item{display:flex;align-items:center;gap:10px;border-radius:10px;padding:8px 12px;font-size:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);cursor:pointer;transition:all .2s}
+.hist-item:hover{background:rgba(255,255,255,.1);border-color:var(--accent)}
+.hist-item img{width:30px;height:30px;border-radius:6px;object-fit:cover;border:1px solid var(--line);flex:none}
+.hist-item .hist-txt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.hist-item .time{font-size:10px;color:var(--mut);flex:none}
+
+/* Auth / History Modals */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);backdrop-filter:blur(12px);z-index:90;display:grid;place-items:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s ease}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal-card{width:100%;max-width:440px;background:var(--glass);border:1px solid var(--line);border-radius:24px;padding:32px;box-shadow:0 30px 80px rgba(0,0,0,.7);position:relative}
+.modal-card .close-btn{position:absolute;top:18px;right:20px;background:none;border:none;box-shadow:none;color:var(--mut);font-size:22px;cursor:pointer;padding:0}
+.modal-card .close-btn:hover{color:#fff;transform:none}
+.modal-tabs{display:flex;gap:12px;margin-bottom:20px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.modal-tab{background:none;border:none;box-shadow:none;color:var(--mut);font-size:14px;cursor:pointer;padding:4px 0}
+.modal-tab.active{color:var(--accent);border-bottom:2px solid var(--accent)}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chips span{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:12px;background:rgba(255,255,255,.05)}
+details{border-bottom:1px solid var(--line);padding:8px 0}summary{cursor:pointer;font-weight:600;font-size:14px}details p{margin:6px 0 0;font-size:13px}
+.full{grid-column:1/-1}.r{grid-column:2}
+footer{position:relative;z-index:5;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:30px 64px 60px;font-size:12px;color:var(--mut);max-width:1420px;margin:0 auto}
+@media(max-width:900px){section{grid-template-columns:1fr;padding:96px 20px 60px;gap:36px;min-height:110vh}.r{grid-column:1}.g3{grid-template-columns:1fr}.dots,.tag,.scroll,.theme-picker{display:none}header nav a:not(.cta){display:none}#glow{display:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.msg{padding:8px 12px;border-radius:12px;margin:6px 0;font-size:13px;white-space:pre-wrap}.msg.user{background:rgba(255,255,255,.08);margin-left:24px}.msg.bot{border:1px solid var(--line)}#chat-log{max-height:260px;overflow-y:auto}hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0 14px}.res ul{margin:8px 0 0;padding-left:18px}
+</style>
+</head>
+<body data-theme="cyber">
+<div id="ld"><span>TRUTHLENS</span></div>
+<div id="prog"></div><div class="frame"></div><div id="glow"></div>
+<canvas id="bg" aria-hidden="true"></canvas>
+
+<header>
+  <div class="logo">TRUTHLENS</div>
+  <div class="tag">VERIFICATION MATRIX &amp;<br>VIRAL FACT-CHECK ENGINE</div>
+  <nav>
+    <a href="#s1">Product</a>
+    <a href="#s2">The noise</a>
+    <a href="#s3">Check</a>
+    <a href="#s4">How it works</a>
+    <button class="user-btn" id="open-hist-nav">History</button>
+    <button class="user-btn" id="auth-nav-btn">Sign In</button>
+    <a class="cta" href="#s3">[ CHECK A CLAIM ]</a>
+  </nav>
+</header>
+
+<!-- Live 3D & Color Theme Controller Dock -->
+<div class="theme-picker" title="Switch Visual Architecture">
+  <span>3D Theme:</span>
+  <button class="theme-btn active" data-t="cyber" style="background:#00f2fe" title="Cyber Matrix (Double-Helix)"></button>
+  <button class="theme-btn" data-t="solar" style="background:#f97316" title="Solar Flare (Pulsing Geosphere)"></button>
+  <button class="theme-btn" data-t="emerald" style="background:#10b981" title="Emerald Bio-Mesh (Crystalline Core)"></button>
+  <button class="theme-btn" data-t="synthwave" style="background:#f43f5e" title="Synthwave (Polyhedron Horizon)"></button>
+</div>
+
+<div class="dots"><a href="#s1" aria-label="Hero" class="on"></a><a href="#s2" aria-label="The noise"></a><a href="#s3" aria-label="Check"></a><a href="#s4" aria-label="How it works"></a><a href="#s5" aria-label="Get started"></a></div>
+<div class="scroll">↓ SCROLL</div>
+
+<!-- Login / Sign Up Modal -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal-card">
+    <button class="close-btn" id="close-auth">&times;</button>
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="tab-login">Log In</button>
+      <button class="modal-tab" id="tab-signup">Create Account</button>
+    </div>
+    <form id="auth-form" onsubmit="event.preventDefault(); handleAuth();" style="display:grid;gap:14px">
+      <div id="name-field-wrap" style="display:none">
+        <label class="note" for="auth-name">Your name</label>
+        <input type="text" id="auth-name" placeholder="E.g. Samarth">
+      </div>
+      <div>
+        <label class="note" for="auth-email">Email address</label>
+        <input type="email" id="auth-email" required placeholder="name@domain.com">
+      </div>
+      <div>
+        <label class="note" for="auth-pass">Password</label>
+        <input type="password" id="auth-pass" required placeholder="••••••••">
+      </div>
+      <button type="submit" id="auth-submit-btn" style="margin-top:8px">Continue</button>
+      <div class="note" style="text-align:center">Accounts keep verification history saved permanently.</div>
+    </form>
+  </div>
+</div>
+
+<!-- Full User History Modal -->
+<div class="modal-overlay" id="history-modal">
+  <div class="modal-card" style="max-width:540px">
+    <button class="close-btn" id="close-history">&times;</button>
+    <h3 style="font-size:18px;margin-bottom:6px">Your Claim History</h3>
+    <span class="note" id="hist-sub">Showing checks saved to your browser session.</span>
+    <div class="hist" id="modal-hist-list" style="margin-top:16px;max-height:420px"></div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end">
+      <button class="ghost" id="clear-hist-btn" style="font-size:11px;padding:6px 14px">Clear history</button>
+    </div>
+  </div>
+</div>
+
+<main>
+<section id="s1"><span class="idx">001 — 005</span>
+ <div class="stack"><h1>Your command centre for <em>real news.</em></h1>
+  <p>Fake forwards spread in minutes. TruthLens checks published fact-checks and official government pages, then gives you a clear verdict with links to the proof.</p>
+  <div class="row"><button data-go="s3">Check a claim</button><button class="ghost" data-go="s4">See how it works</button></div></div>
+ <div class="stack r">
+  <div class="g2"><div class="pn tilt"><div class="num" data-n="2">0</div><h3>Verification layers</h3><span class="note">Google Fact Check + official government sources</span></div>
+  <div class="pn tilt"><div class="num" data-n="4">0</div><h3>Plain verdicts</h3><span class="note">True, false, misleading, unverified</span></div></div>
+ </div>
+</section>
+
+<section id="s2"><span class="idx">002 — 005</span>
+ <div class="stack"><h2>Why fake news <em>wins the race.</em></h2>
+  <p>It is emotional, urgent and unsourced, so it spreads faster than a correction can. Watch the multi-dimensional structure align as claims are inspected.</p></div>
+ <div class="pn r tilt"><h3 style="margin-bottom:10px">Four red flags to spot</h3>
+  <div style="display:grid;gap:22px">
+   <div class="flag"><i>1</i><div><h3>Urgent, scary language</h3><span class="note">“Act now”, “last chance”, “before it is deleted”.</span></div></div>
+   <div class="flag"><i>2</i><div><h3>No named source</h3><span class="note">“Doctors say” or “my friend in the ministry” is not a source.</span></div></div>
+   <div class="flag"><i>3</i><div><h3>Asks you to forward it</h3><span class="note">Real notices don't depend on chain messages.</span></div></div>
+   <div class="flag"><i>4</i><div><h3>Too good or too shocking</h3><span class="note">Free money and instant cures deserve a second look.</span></div></div>
+  </div></div>
+</section>
+
+<section id="s3"><span class="idx">003 — 005</span>
+ <div class="stack"><h2>Paste it. <em>Prove it.</em></h2>
+  <p>Drop in any headline, forward, screenshot, or newspaper clipping. Results appear in seconds, with verified sources linked.</p>
+  <div class="pn">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Recent checks</h3>
+      <button class="ghost" id="open-hist-btn" style="padding:4px 10px;font-size:11px">View All</button>
+    </div>
+    <div class="hist" id="hist"><span class="note">Your checks appear here.</span></div>
+  </div>
+ </div>
+ <div class="pn r">
+  <label for="claim" class="note">News or claim to check</label>
+  <textarea id="claim" placeholder="Paste claim text, headline, or add context about your image..."></textarea>
+  
+  <!-- File Upload Zone -->
+  <label class="file-drop" for="claim-img">
+    <input type="file" id="claim-img" accept="image/jpeg,image/png,image/webp">
+    <span id="upload-txt">📷 Click or drag an image or screenshot here to upload</span>
+  </label>
+  <div id="img-preview" style="display:none" class="img-preview-box">
+    <img id="thumb" src="" alt="Claim Preview">
+    <span class="name" id="file-name"></span>
+    <button type="button" id="rm-img">Remove</button>
+  </div>
+
+  <div class="row">
+    <button id="go">Check this claim</button>
+    <button class="ghost" data-s="Drinking hot water cures coronavirus">Try: hot water cure</button>
+    <button class="ghost" data-s="RBI is withdrawing all 500 rupee notes tomorrow">Try: note ban</button>
+    <button class="ghost" data-s="Government will give free laptop to all students, share this">Try: free laptop</button>
+  </div>
+  <div id="result" aria-live="polite"></div>
+  <div id="actions"></div>
+  <div id="chat" class="res" style="display:none"><h3>Ask Gemini about this news</h3><div id="chat-log"></div>
+   <div class="row" style="margin-top:8px;flex-wrap:nowrap"><input type="text" id="q" placeholder="Ask a follow-up question…"><button id="ask">Ask</button></div></div>
+  <hr class="sep"><h3>Video &amp; AI-content check</h3>
+  <label class="file-drop" for="vid"><input type="file" id="vid" accept="video/*"><span id="vid-txt">🎬 Upload a video to see if it is AI-generated</span></label>
+  <div class="row"><button class="ghost" id="chk-text">Is the text above AI-written?</button></div>
+  <div id="ai-out" aria-live="polite"></div>
+ </div>
+</section>
+
+<section id="s4"><span class="idx">004 — 005</span>
+ <div class="pn tilt"><h2>Four layers, <em>one verdict.</em></h2>
+  <div class="lay">
+   <div class="mini"><i>1</i><div><h3>Your claim &amp; media</h3><span>Cleaned, OCR-extracted, and parsed on our server</span></div></div>
+   <div class="mini"><i>2</i><div><h3>Google Fact Check API</h3><span>Finds claims already reviewed by fact-checkers</span></div></div>
+   <div class="mini"><i>3</i><div><h3>Government sources</h3><span>PIB Fact Check and ministry pages</span></div></div>
+   <div class="mini"><i>4</i><div><h3>Verdict engine</h3><span>Maps ratings to a clear label with links</span></div></div>
+  </div></div>
+ <div class="stack r">
+  <div class="pn tilt"><h3>What the labels mean</h3><div class="g2" style="margin-top:8px">
+   <div><span class="badge TRUE">Verified true</span><br><span class="note">Confirmed by a source</span></div>
+   <div><span class="badge FALSE">Verified false</span><br><span class="note">Debunked by a source</span></div>
+   <div><span class="badge MIXED">Misleading</span><br><span class="note">Partly true, missing context</span></div>
+   <div><span class="badge UNVERIFIED">Unverified</span><br><span class="note">No source found yet</span></div></div></div>
+ </div>
+</section>
+
+<section id="s5"><span class="idx">005 — 005</span>
+ <div class="pn full tilt" style="margin-top:30vh;text-align:center;padding:48px 32px"><h2>Ready to stop the next <em>fake forward?</em></h2>
+  <p style="margin-inline:auto">Check first. Share only what is verified.</p>
+  <div class="chips" style="justify-content:center;margin-bottom:14px"><span>PIB Fact Check</span><span>pib.gov.in</span><span>mohfw.gov.in</span><span>rbi.org.in</span><span>eci.gov.in</span><span>india.gov.in</span><span>Google Fact Check</span></div>
+  <button data-go="s3">Get started</button></div>
+ <div class="pn full" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px 28px">
+  <details><summary>Is “Unverified” the same as fake?</summary><p>No. It means no published fact-check was found yet. Wait for confirmation before sharing.</p></details>
+  <details><summary>Where do the verdicts come from?</summary><p>From fact-checkers indexed by Google and from official government pages, always linked.</p></details>
+  <details><summary>Can I check images and regional languages?</summary><p>Yes, screenshots can be uploaded for OCR extraction, and multi-language verification will map to official fact-checking registries.</p></details>
+ </div>
+</section>
+</main>
+<footer><span>TruthLens – built to slow down fake news.</span><span>Results come from existing fact-checks and are not a guarantee.</span></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+setTimeout(()=>$('#ld').classList.add('off'),900);
+$$('[data-go]').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.go).scrollIntoView({behavior:'smooth'}));
+$$('[data-n]').forEach(el=>{const n=+el.dataset.n;let v=0;const id=setInterval(()=>{v+=.2;if(v>=n){v=n;clearInterval(id)}el.textContent=Math.round(v)},70)});
+
+// Cursor glow + card tilt
+addEventListener('pointermove',e=>{const g=$('#glow');g.style.left=e.clientX+'px';g.style.top=e.clientY+'px'});
+$$('.tilt').forEach(c=>{c.addEventListener('pointermove',e=>{const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.transform='perspective(800px) rotateY('+x*6+'deg) rotateX('+-y*6+'deg)'});c.addEventListener('pointerleave',()=>c.style.transform='')});
+
+/* =========================================================
+   DYNAMIC MULTI-ARCHITECTURE 3D ENGINE
+   ========================================================= */
+let currentTheme = 'cyber';
+let updateEngineTheme = null;
+
+(function(){
+  const cv = $('#bg');
+  const R = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true });
+  R.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+  const S = new THREE.Scene();
+  const C = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  C.position.set(0, 0, 14);
+
+  // Lighting
+  const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+  S.add(ambient);
+  const keyLight = new THREE.DirectionalLight(0x00f2fe, 1.5);
+  keyLight.position.set(5, 8, 8);
+  S.add(keyLight);
+  const fillLight = new THREE.DirectionalLight(0x4f46e5, 1.3);
+  fillLight.position.set(-6, -4, -3);
+  S.add(fillLight);
+
+  const G = new THREE.Group();
+  S.add(G);
+
+  // 1. Core Polyhedral Nodes (56 Units)
+  const N = 56;
+  const nodes = [];
+  const nodeGeoOcta = new THREE.OctahedronGeometry(0.35, 1);
+  const nodeGeoBox = new THREE.BoxGeometry(0.42, 0.42, 0.42);
+  const nodeGeoIcosa = new THREE.IcosahedronGeometry(0.36, 0);
+
+  const mat1 = new THREE.MeshStandardMaterial({ color: 0x00f2fe, roughness: 0.2, metalness: 0.8 });
+  const mat2 = new THREE.MeshStandardMaterial({ color: 0x4f46e5, roughness: 0.25, metalness: 0.7 });
+
+  for(let i = 0; i < N; i++){
+    const mesh = new THREE.Mesh(nodeGeoOcta, i % 2 === 0 ? mat1 : mat2);
+    G.add(mesh);
+    nodes.push(mesh);
+  }
+
+  // 2. Dual Gyroscopic Orbit Rings
+  const ring1 = new THREE.Mesh(new THREE.TorusGeometry(3.6, 0.04, 16, 100), new THREE.MeshBasicMaterial({ color: 0x00f2fe, transparent: true, opacity: 0.35, wireframe: true }));
+  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.03, 16, 80), new THREE.MeshBasicMaterial({ color: 0xec4899, transparent: true, opacity: 0.28 }));
+  ring1.rotation.x = Math.PI / 3;
+  ring2.rotation.y = Math.PI / 4;
+  G.add(ring1);
+  G.add(ring2);
+
+  // 3. Central Morphing Polyhedron
+  const centralCore = new THREE.Mesh(new THREE.IcosahedronGeometry(1.6, 1), new THREE.MeshStandardMaterial({ color: 0x00f2fe, wireframe: true, transparent: true, opacity: 0.4 }));
+  G.add(centralCore);
+
+  // 4. Undulating Cyber Wave Ground Grid
+  const gridGeo = new THREE.PlaneGeometry(24, 14, 40, 24);
+  const gridMat = new THREE.MeshBasicMaterial({ color: 0x0284c7, wireframe: true, transparent: true, opacity: 0.2 });
+  const grid = new THREE.Mesh(gridGeo, gridMat);
+  grid.rotation.x = -1.3;
+  grid.position.y = -2.8;
+  S.add(grid);
+  const gCoords = gridGeo.attributes.position;
+  const initZ = [];
+  for(let i=0; i<gCoords.count; i++) initZ.push(gCoords.getY(i));
+
+  // 5. Ambient Stardust Particles
+  const pCount = 350;
+  const pGeo = new THREE.BufferGeometry();
+  const pPos = new Float32Array(pCount * 3);
+  for(let i = 0; i < pCount * 3; i++) {
+    pPos[i] = (Math.random() - 0.5) * (i % 3 === 2 ? 18 : 34);
+  }
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  const pMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.05, transparent: true, opacity: 0.7 });
+  const stardust = new THREE.Points(pGeo, pMat);
+  S.add(stardust);
+
+  // Theme definition controller
+  updateEngineTheme = function(theme){
+    currentTheme = theme;
+    if(theme === 'cyber'){
+      keyLight.color.setHex(0x00f2fe);
+      fillLight.color.setHex(0x4f46e5);
+      mat1.color.setHex(0x00f2fe);
+      mat2.color.setHex(0x4f46e5);
+      ring1.material.color.setHex(0x00f2fe);
+      ring2.material.color.setHex(0xec4899);
+      centralCore.material.color.setHex(0x00f2fe);
+      gridMat.color.setHex(0x0284c7);
+      pMat.color.setHex(0x38bdf8);
+      nodes.forEach(m => m.geometry = nodeGeoOcta);
+    } else if(theme === 'solar'){
+      keyLight.color.setHex(0xf97316);
+      fillLight.color.setHex(0xef4444);
+      mat1.color.setHex(0xf97316);
+      mat2.color.setHex(0xfbbf24);
+      ring1.material.color.setHex(0xf97316);
+      ring2.material.color.setHex(0xef4444);
+      centralCore.material.color.setHex(0xfbbf24);
+      gridMat.color.setHex(0xea580c);
+      pMat.color.setHex(0xfdba74);
+      nodes.forEach(m => m.geometry = nodeGeoIcosa);
+    } else if(theme === 'emerald'){
+      keyLight.color.setHex(0x10b981);
+      fillLight.color.setHex(0x065f46);
+      mat1.color.setHex(0x10b981);
+      mat2.color.setHex(0x34d399);
+      ring1.material.color.setHex(0x10b981);
+      ring2.material.color.setHex(0x059669);
+      centralCore.material.color.setHex(0x6ee7b7);
+      gridMat.color.setHex(0x047857);
+      pMat.color.setHex(0x6ee7b7);
+      nodes.forEach(m => m.geometry = nodeGeoBox);
+    } else if(theme === 'synthwave'){
+      keyLight.color.setHex(0xf43f5e);
+      fillLight.color.setHex(0x8b5cf6);
+      mat1.color.setHex(0xf43f5e);
+      mat2.color.setHex(0x38bdf8);
+      ring1.material.color.setHex(0xec4899);
+      ring2.material.color.setHex(0x8b5cf6);
+      centralCore.material.color.setHex(0xec4899);
+      gridMat.color.setHex(0xbe185d);
+      pMat.color.setHex(0xf472b6);
+      nodes.forEach(m => m.geometry = nodeGeoOcta);
+    }
+  };
+
+  // Section shape mapping
+  function getNodeTarget(s, i, time){
+    const u = i / (N - 1);
+    
+    // Theme modifier
+    const isSolar = currentTheme === 'solar';
+    const isEmerald = currentTheme === 'emerald';
+
+    // S0: Double-Helix Wave OR Pulsing Core Ring
+    if(s === 0){
+      if(isSolar){
+        const angle = u * Math.PI * 4 + time;
+        const rad = 3.5 + Math.sin(time * 2 + i) * 0.4;
+        return [Math.cos(angle) * rad, Math.sin(angle) * rad * 0.5, (u - 0.5) * 8];
+      }
+      const angle = u * Math.PI * 4 + time * 0.8;
+      const strand = (i % 2 === 0 ? 1 : -1);
+      return [(u - 0.5) * 15, Math.sin(angle) * 1.5 * strand, Math.cos(angle) * 1.5 * strand];
+    }
+    // S1: Scatter Chaos
+    if(s === 1){
+      const a = i * 2.8 + time * 0.4;
+      const rad = 2.8 + (i % 7) * 0.45;
+      return [Math.cos(a) * rad, Math.sin(a * 1.3) * 2.2, Math.sin(a) * rad * 0.8];
+    }
+    // S2: Ordered Fact Scanning Matrix (Data Grid)
+    if(s === 2){
+      const col = i % 8;
+      const row = Math.floor(i / 8);
+      const ripple = Math.sin(time * 2 + col * 0.5) * 0.25;
+      return [(col - 3.5) * 1.4, (row - 3) * 0.9 + ripple, Math.cos(time + row) * 0.2];
+    }
+    // S3: Multi-Layer Verification Orbit
+    if(s === 3){
+      const layer = Math.floor(i / 14);
+      const th = (i % 14) / 14 * Math.PI * 2 + time * (layer % 2 === 0 ? 0.6 : -0.6);
+      const r = 2.2 + layer * 1.2;
+      return [Math.cos(th) * r, (layer - 1.5) * 1.2, Math.sin(th) * r * 0.6];
+    }
+    // S4: Unified Geosphere (Truth Solidified)
+    const phi = Math.acos(-1 + (2 * i) / N);
+    const theta = Math.sqrt(N * Math.PI) * phi + time * 0.4;
+    const rad = 3.2;
+    return [rad * Math.cos(theta) * Math.sin(phi), rad * Math.sin(theta) * Math.sin(phi), rad * Math.cos(phi)];
+  }
+
+  let W, H, mob = false;
+  const mouse = { x: 0, y: 0 };
+  let scrollProgress = 0, clock = 0;
+
+  function onResize(){
+    W = innerWidth;
+    H = innerHeight;
+    R.setSize(W, H, false);
+    C.aspect = W / H;
+    C.updateProjectionMatrix();
+    mob = W < 900;
+  }
+  addEventListener('resize', onResize);
+  onResize();
+
+  addEventListener('pointermove', e => {
+    mouse.x = (e.clientX / W) * 2 - 1;
+    mouse.y = -(e.clientY / H) * 2 + 1;
+  });
+
+  const rm = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const sections = $$('main section');
+  const dots = $$('.dots a');
+  const clamp = v => Math.min(1, Math.max(0, v));
+  const lerp = (a, b, f) => a + (b - a) * f;
+
+  function renderLoop(){
+    clock += rm ? 0 : 0.014;
+
+    let targetIdx = sections.length - 1;
+    let activeSec = 0;
+    for(let i = 0; i < sections.length; i++){
+      const rect = sections[i].getBoundingClientRect();
+      if(rect.bottom > H * 0.5){
+        const frac = (H * 0.5 - rect.top) / rect.height;
+        targetIdx = i + clamp((frac - 0.5) / 0.5);
+        activeSec = i;
+        if(frac < 0) targetIdx = i;
+        break;
+      }
+    }
+
+    scrollProgress += (targetIdx - scrollProgress) * 0.085;
+    dots.forEach((d, i) => d.classList.toggle('on', i === activeSec));
+    $('#prog').style.width = (scrollY / Math.max(1, document.documentElement.scrollHeight - H) * 100) + '%';
+
+    const baseSec = Math.min(3, Math.floor(scrollProgress));
+    const factor = clamp(scrollProgress - baseSec);
+
+    nodes.forEach((node, i) => {
+      const pA = getNodeTarget(baseSec, i, clock);
+      const pB = getNodeTarget(baseSec + 1, i, clock);
+      node.position.set(
+        lerp(pA[0], pB[0], factor),
+        lerp(pA[1], pB[1], factor),
+        lerp(pA[2], pB[2], factor)
+      );
+      node.rotation.x += 0.01;
+      node.rotation.y += 0.015;
+    });
+
+    // Central core pulsation
+    const corePulse = 1 + Math.sin(clock * 2) * 0.08;
+    centralCore.scale.setScalar(corePulse);
+    centralCore.rotation.x = clock * 0.3;
+    centralCore.rotation.y = clock * 0.4;
+    centralCore.visible = (baseSec === 0 || baseSec === 4);
+
+    ring1.rotation.z += 0.005;
+    ring2.rotation.x += 0.008;
+
+    for(let i=0; i<gCoords.count; i++){
+      const x = gCoords.getX(i);
+      const y = initZ[i];
+      gCoords.setZ(i, Math.sin(x * 0.6 + clock * 1.5) * Math.cos(y * 0.5 - clock) * 0.6);
+    }
+    gCoords.needsUpdate = true;
+
+    G.rotation.y = clock * 0.12 + mouse.x * 0.25;
+    G.rotation.x = mouse.y * 0.18;
+    stardust.rotation.y = clock * 0.02;
+
+    G.scale.setScalar(mob ? 0.65 : 1);
+    G.position.y = mob ? -1.2 : 0;
+
+    R.render(S, C);
+    requestAnimationFrame(renderLoop);
+  }
+  renderLoop();
+})();
+
+// Theme button switcher logic
+$$('.theme-btn').forEach(btn => {
+  btn.onclick = () => {
+    $$('.theme-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const t = btn.dataset.t;
+    document.body.setAttribute('data-theme', t);
+    if(updateEngineTheme) updateEngineTheme(t);
+  };
+});
+
+// Demo bank & helper methods
+const DEMO=[
+ {k:/hot water|coronavirus|covid/i,v:'FALSE',c:90,t:'Drinking hot water does not cure or prevent COVID-19.',s:[['WHO Mythbusters','https://www.who.int']]},
+ {k:/500|note|currency|withdraw/i,v:'FALSE',c:85,t:'Claims of sudden note withdrawals have been denied by official fact-checks.',s:[['PIB Fact Check','https://factcheck.pib.gov.in']]},
+ {k:/laptop|share this/i,v:'MIXED',c:60,t:'Similar forwards have circulated; check the official scheme portal for real eligibility.',s:[['india.gov.in','https://www.india.gov.in']]}];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LB={TRUE:'Verified true',FALSE:'Verified false',MIXED:'Misleading',UNVERIFIED:'Unverified'};
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+// Authentication & Profile State
+let currentUser = JSON.parse(localStorage.getItem('truthlens_user') || 'null');
+let isSignUpMode = false;
+
+function refreshAuthUI(){
+  const btn = $('#auth-nav-btn');
+  if(currentUser){
+    btn.textContent = currentUser.name || currentUser.email.split('@')[0];
+    btn.title = "Click to sign out";
+  } else {
+    btn.textContent = "Sign In";
+    btn.title = "Sign in or register";
+  }
+}
+refreshAuthUI();
+
+$('#auth-nav-btn').onclick = () => {
+  if(currentUser){
+    if(confirm(`Signed in as ${currentUser.email}. Do you want to sign out?`)){
+      currentUser = null;
+      localStorage.removeItem('truthlens_user');
+      refreshAuthUI();
+      renderHist();
+    }
+  } else {
+    $('#auth-modal').classList.add('open');
+  }
+};
+
+$('#close-auth').onclick = () => $('#auth-modal').classList.remove('open');
+
+$('#tab-login').onclick = () => {
+  isSignUpMode = false;
+  $('#tab-login').classList.add('active');
+  $('#tab-signup').classList.remove('active');
+  $('#name-field-wrap').style.display = 'none';
+  $('#auth-submit-btn').textContent = 'Log In';
+};
+
+$('#tab-signup').onclick = () => {
+  isSignUpMode = true;
+  $('#tab-signup').classList.add('active');
+  $('#tab-login').classList.remove('active');
+  $('#name-field-wrap').style.display = 'block';
+  $('#auth-submit-btn').textContent = 'Create Account';
+};
+
+function handleAuth(){
+  const email = $('#auth-email').value.trim();
+  const name = $('#auth-name').value.trim() || email.split('@')[0];
+  if(!email) return;
+  currentUser = { email, name };
+  localStorage.setItem('truthlens_user', JSON.stringify(currentUser));
+  $('#auth-modal').classList.remove('open');
+  refreshAuthUI();
+  renderHist();
+}
+
+// History Storage Management (Saved by User/Guest)
+function getHistoryKey(){
+  return currentUser ? `truthlens_hist_${currentUser.email}` : 'truthlens_hist_guest';
+}
+
+function loadHistory(){
+  return JSON.parse(localStorage.getItem(getHistoryKey()) || '[]');
+}
+
+function saveHistoryItem(item){
+  const hist = loadHistory();
+  hist.unshift(item);
+  if(hist.length > 30) hist.pop();
+  localStorage.setItem(getHistoryKey(), JSON.stringify(hist));
+  renderHist();
+}
+
+function renderHist(){
+  const hist = loadHistory();
+  const makeItem = (h, i) => `
+    <div class="hist-item" data-i="${i}">
+      ${h.thumb ? `<img src="${h.thumb}" alt="thumb">` : ''}
+      <span class="badge ${h.v}" style="margin:0;font-size:10px">${LB[h.v]}</span>
+      <span class="hist-txt">${esc(h.text)}</span>
+      <span class="time">${h.time || ''}</span>
+    </div>`;
+
+  const miniList = hist.slice(0, 4);
+  $('#hist').innerHTML = miniList.length ? miniList.map(makeItem).join('') : '<span class="note">Your checks appear here.</span>';
+  
+  $('#modal-hist-list').innerHTML = hist.length ? hist.map(makeItem).join('') : '<div class="note" style="text-align:center;padding:24px">No checks found. Verified claims will be logged here.</div>';
+  $('#hist-sub').textContent = currentUser ? `Saved checks for ${currentUser.email}` : 'Showing checks saved in this browser.';
+
+  $$('.hist-item').forEach(el => {
+    el.onclick = () => {
+      const idx = +el.dataset.i;
+      const target = hist[idx];
+      if(!target) return;
+      $('#claim').value = target.text.startsWith('[Image') ? '' : target.text;
+      $('#history-modal').classList.remove('open');
+      curText=target.text;show({ v: target.v, c: target.c || 75, t: target.t || target.text, s: target.s || [] }, false);
+      document.getElementById('s3').scrollIntoView({behavior:'smooth'});
+    };
+  });
+}
+
+// History Modals open/close
+$('#open-hist-nav').onclick = () => { renderHist(); $('#history-modal').classList.add('open'); };
+$('#open-hist-btn').onclick = () => { renderHist(); $('#history-modal').classList.add('open'); };
+$('#close-history').onclick = () => $('#history-modal').classList.remove('open');
+$('#clear-hist-btn').onclick = () => {
+  if(confirm("Clear your verification history?")){
+    localStorage.removeItem(getHistoryKey());
+    renderHist();
+  }
+};
+
+// Image Upload Logic
+let currentImageBase64 = null;
+const fileInput = $('#claim-img');
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  if(file.size > 5 * 1024 * 1024){
+    alert('Please choose an image under 5 MB.');
+    fileInput.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    currentImageBase64 = ev.target.result;
+    $('#thumb').src = currentImageBase64;
+    $('#file-name').textContent = file.name;
+    $('#img-preview').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+});
+
+$('#rm-img').addEventListener('click', () => {
+  currentImageBase64 = null;
+  fileInput.value = '';
+  $('#img-preview').style.display = 'none';
+});
+
+// Presentation & Checking logic
+function show(r,demo){
+ $('#result').innerHTML='<div class="res"><div class="steps"><span><b>✓</b> Google Fact Check</span><span><b>✓</b> Government sources</span><span><b>✓</b> Verdict</span></div><div style="margin-top:8px"><span class="badge '+r.v+'">'+LB[r.v]+'</span></div><div>'+esc(r.t)+'</div>'+truthHtml(r)+'<div class="note" style="margin-top:6px">'+(r.s.length?'Sources: '+r.s.map(x=>'<a href="'+esc(x[1])+'" target="_blank" rel="noopener">'+esc(x[0])+'</a>').join(', '):'No source found. Do not share until confirmed.')+(demo?' · Demo result – connect backend for live production checking.':'')+'</div></div>';
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{const b=$('#result .meter i');if(b)b.style.width=truthP(r)+'%'}));
+ bindActions(r);
+}
+
+async function check(){
+ const text=$('#claim').value.trim(),out=$('#result');
+ if(text.length < 10 && !currentImageBase64){
+   out.innerHTML='<div class="res"><span class="badge UNVERIFIED">Input needed</span> Enter at least 10 characters or upload a claim screenshot.</div>';
+   return;
+ }
+
+ const queryLabel = text || (fileInput.files[0] ? `[Image: ${fileInput.files[0].name}]` : 'Uploaded Image');
+ out.innerHTML='<div class="res"><div class="steps"><span>Analyzing ' + (currentImageBase64 ? 'image OCR & ' : '') + 'Google Fact Check…</span></div></div>';
+ 
+ let res, demo=false;
+ try{
+   const r=await fetch('/api/check',{
+     method:'POST',
+     headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({ text, image: currentImageBase64 })
+   });
+   if(!r.ok) throw 0;
+   const d=await r.json(),f=(d.results||[])[0];
+   if(!f){
+     const a=d.ai;
+     res=a?{v:LB[a.verdict]?a.verdict:'UNVERIFIED',truth:a.truth,c:50,t:a.summary+' (Gemini assessment – no published fact-check found)',s:(a.sources||[]).map(x=>[x.name,x.url])}:{v:'UNVERIFIED',c:10,t:'No published fact-check matches this claim yet.',s:[]};
+   }else{
+     const q=f.rating||'',x=/false|fake|incorrect|hoax|fabricated/i.test(q)?'FALSE':/mislead|partly|mixed|context/i.test(q)?'MIXED':/true|correct|accurate/i.test(q)?'TRUE':'UNVERIFIED';
+     res={v:x,c:75,truth:({TRUE:100,FALSE:0,MIXED:50})[x]??null,t:f.claim+' – rated "'+q+'" by '+f.publisher,s:[[f.publisher||'Source',f.url]]};
+   }
+ }catch(e){
+   demo=true;
+   if(currentImageBase64 && !text){
+     res={
+       v:'UNVERIFIED',
+       c:30,
+       t:'Image received. In demo mode, live multimodal/OCR inspection connects via backend API.',
+       s:[['Google Fact Check Explorer','https://toolbox.google.com/factcheck/explorer']]
+     };
+   } else {
+     res=DEMO.find(d=>d.k.test(text))||{v:'UNVERIFIED',c:10,t:'No published fact-check matches this claim yet.',s:[]};
+   }
+ }
+
+ out.innerHTML='<div class="res"><div class="steps"><span><b>✓</b> ' + (currentImageBase64 ? 'Image OCR & ' : '') + 'Fact Check</span><span>Checking government sources…</span></div></div>';
+ await wait(450);
+ curText=queryLabel;
+ show(res, demo);
+
+ const now = new Date();
+ const timeStr = now.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+ saveHistoryItem({
+   text: queryLabel,
+   v: res.v,
+   c: res.c,
+   t: res.t,
+   s: res.s,
+   thumb: currentImageBase64 || null,
+   time: timeStr
+ });
+}
+
+$('#go').onclick=check; $$('button[data-s]').forEach(b=>b.onclick=()=>{$('#claim').value=b.dataset.s;
+  check();
+});
+
+/* ---- v2: truth %, Gemini follow-up, AI-content detection ---- */
+let lastCtx=null,curText='',chatHist=[];
+function truthP(r){return r.truth!=null?r.truth:({TRUE:100,FALSE:0,MIXED:50})[r.v]??null}
+function truthHtml(r){const p=truthP(r);return p===null?'<div class="note">Probability this is true: not enough evidence</div>':'<div class="note">Probability this news is true: <b>'+p+'%</b></div><div class="meter"><i style="width:0"></i></div>'}
+function bindActions(r){
+ lastCtx=r;chatHist=[];$('#chat').style.display='none';$('#chat-log').innerHTML='';
+ $('#actions').innerHTML='<div class="row"><button id="srch">🔎 Search about this</button></div>';
+ $('#srch').onclick=()=>{$('#chat').style.display='block';if(!chatHist.length)ask('Give a short background of this news: who, what, when, and where it started.')};
+}
+async function post(url,body,isForm){const r=await fetch(url,{method:'POST',headers:isForm?{}:{'Content-Type':'application/json'},body:isForm?body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status);return r.json()}
+function say(role,text){$('#chat-log').insertAdjacentHTML('beforeend','<div class="msg '+role+'">'+esc(text)+'</div>');$('#chat-log').scrollTop=1e9;return $('#chat-log').lastChild}
+async function ask(q){
+ say('user',q);const el=say('bot','…');
+ try{const d=await post('/api/ask',{topic:curText+' — '+lastCtx.t,verdict:lastCtx.v,history:chatHist,question:q});
+  el.textContent=d.answer;chatHist.push({role:'user',text:q},{role:'model',text:d.answer});}
+ catch(e){el.textContent='Gemini backend is offline. Run "npm start" with your GEMINI_API_KEY to enable follow-up questions.'}
+}
+$('#ask').onclick=()=>{const q=$('#q').value.trim();if(q){$('#q').value='';ask(q)}};
+$('#q').onkeydown=e=>{if(e.key==='Enter')$('#ask').click()};
+function aiCard(d,what){
+ const p=Math.round(d.ai_percent),lab=p>=70?'Likely AI-generated':p>=40?'Possibly AI-generated':'Likely authentic',cls=p>=70?'FALSE':p>=40?'MIXED':'TRUE';
+ $('#ai-out').innerHTML='<div class="res"><span class="badge '+cls+'">'+lab+'</span><div class="note">Probability this '+what+' is AI-generated: <b>'+p+'%</b></div><div class="meter"><i style="width:'+p+'%"></i></div><ul class="note">'+(d.reasons||[]).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul><div class="note">Estimate only – no AI detector is 100% accurate.</div></div>';
+}
+const aiErr=m=>{$('#ai-out').innerHTML='<div class="res"><span class="badge UNVERIFIED">Backend needed</span> '+m+'</div>'};
+$('#vid').onchange=async e=>{
+ const f=e.target.files[0];if(!f)return;
+ if(f.size>50*1024*1024)return aiErr('Please choose a video under 50 MB.');
+ $('#vid-txt').textContent='🎬 '+f.name;$('#ai-out').innerHTML='<div class="res">Extracting frames and analysing…</div>';
+ const fd=new FormData();fd.append('video',f);
+ try{aiCard(await post('/api/detect-video',fd,true),'video')}catch(x){aiErr('Start ai_detector.py and server.js to analyse videos.')}
+};
+$('#chk-text').onclick=async()=>{
+ const t=$('#claim').value.trim();if(t.length<30)return aiErr('Paste at least 30 characters in the box above.');
+ $('#ai-out').innerHTML='<div class="res">Analysing writing style…</div>';
+ try{aiCard(await post('/api/detect-text',{text:t}),'text')}catch(x){aiErr('Start server.js with your GEMINI_API_KEY.')}
+};
+
+renderHist();
+</script>
+</body>
+</html>
